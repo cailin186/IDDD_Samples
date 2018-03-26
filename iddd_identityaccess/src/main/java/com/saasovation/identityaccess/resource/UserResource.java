@@ -36,150 +36,108 @@ import com.saasovation.identityaccess.domain.model.identity.UserDescriptor;
 @Path("/tenants/{tenantId}/users")
 public class UserResource extends AbstractResource {
 
-    public UserResource() {
-        super();
-    }
+	public UserResource() {
+		super();
+	}
 
-    @GET
-    @Path("{username}/autenticatedWith/{password}")
-    @Produces({ OvationsMediaType.ID_OVATION_TYPE })
-    public Response getAuthenticUser(
-            @PathParam("tenantId") String aTenantId,
-            @PathParam("username") String aUsername,
-            @PathParam("password") String aPassword,
-            @Context Request aRequest) {
+	@GET
+	@Path("{username}/autenticatedWith/{password}")
+	@Produces({ OvationsMediaType.ID_OVATION_TYPE })
+	public Response getAuthenticUser(@PathParam("tenantId") String aTenantId, @PathParam("username") String aUsername,
+			@PathParam("password") String aPassword, @Context Request aRequest) {
 
-        UserDescriptor userDescriptor =
-                this.identityApplicationService()
-                    .authenticateUser(
-                            new AuthenticateUserCommand(
-                                    aTenantId,
-                                    aUsername,
-                                    aPassword));
+		UserDescriptor userDescriptor = this.identityApplicationService()
+				.authenticateUser(new AuthenticateUserCommand(aTenantId, aUsername, aPassword));
 
-        if (userDescriptor.isNullDescriptor()) {
-            throw new WebApplicationException(Response.Status.NOT_FOUND);
-        }
+		if (userDescriptor.isNullDescriptor()) {
+			throw new WebApplicationException(Response.Status.NOT_FOUND);
+		}
 
-        Response response = this.userDescriptorResponse(aRequest, userDescriptor);
+		Response response = this.userDescriptorResponse(aRequest, userDescriptor);
 
-        return response;
-    }
+		return response;
+	}
 
-    @GET
-    @Path("{username}")
-    @Produces({ OvationsMediaType.ID_OVATION_TYPE })
-    public Response getUser(
-            @PathParam("tenantId") String aTenantId,
-            @PathParam("username") String aUsername,
-            @Context Request aRequest) {
+	@GET
+	@Path("{username}")
+	@Produces({ OvationsMediaType.ID_OVATION_TYPE })
+	public Response getUser(@PathParam("tenantId") String aTenantId, @PathParam("username") String aUsername,
+			@Context Request aRequest) {
 
-        User user = this.identityApplicationService().user(aTenantId, aUsername);
+		User user = this.identityApplicationService().user(aTenantId, aUsername);
 
-        if (user == null) {
-            throw new WebApplicationException(Response.Status.NOT_FOUND);
-        }
+		if (user == null) {
+			throw new WebApplicationException(Response.Status.NOT_FOUND);
+		}
 
-        Response response = this.userResponse(aRequest, user);
+		Response response = this.userResponse(aRequest, user);
 
-        return response;
-    }
+		return response;
+	}
 
-    @GET
-    @Path("{username}/inRole/{role}")
-    @Produces({ OvationsMediaType.ID_OVATION_TYPE })
-    public Response getUserInRole(
-            @PathParam("tenantId") String aTenantId,
-            @PathParam("username") String aUsername,
-            @PathParam("role") String aRoleName) {
+	@GET
+	@Path("{username}/inRole/{role}")
+	@Produces({ OvationsMediaType.ID_OVATION_TYPE })
+	public Response getUserInRole(@PathParam("tenantId") String aTenantId, @PathParam("username") String aUsername,
+			@PathParam("role") String aRoleName) {
 
-        Response response = null;
+		Response response = null;
 
-        User user = null;
+		User user = null;
 
-        try {
-            user = this.accessApplicationService()
-                       .userInRole(
-                               aTenantId,
-                               aUsername,
-                               aRoleName);
-        } catch (Exception e) {
-            // fall through
-        }
+		try {
+			user = this.accessApplicationService().userInRole(aTenantId, aUsername, aRoleName);
+		} catch (Exception e) {
+			// fall through
+		}
 
-        if (user != null) {
-            response = this.userInRoleResponse(user, aRoleName);
-        } else {
-            response = Response.noContent().build();
-        }
+		if (user != null) {
+			response = this.userInRoleResponse(user, aRoleName);
+		} else {
+			response = Response.noContent().build();
+		}
 
-        return response;
-    }
+		return response;
+	}
 
-    private Response userDescriptorResponse(
-            Request aRequest,
-            UserDescriptor aUserDescriptor) {
+	private Response userDescriptorResponse(Request aRequest, UserDescriptor aUserDescriptor) {
 
-        Response response = null;
+		Response response = null;
 
-        String representation = ObjectSerializer.instance().serialize(aUserDescriptor);
+		String representation = ObjectSerializer.instance().serialize(aUserDescriptor);
 
-        response =
-            Response
-                .ok(representation)
-                .cacheControl(this.cacheControlFor(30))
-                .build();
+		response = Response.ok(representation).cacheControl(this.cacheControlFor(30)).build();
 
-        return response;
-    }
+		return response;
+	}
 
-    private Response userInRoleResponse(User aUser, String aRoleName) {
+	private Response userInRoleResponse(User aUser, String aRoleName) {
 
-        UserInRoleRepresentation userInRoleRepresentation =
-                new UserInRoleRepresentation(aUser, aRoleName);
+		UserInRoleRepresentation userInRoleRepresentation = new UserInRoleRepresentation(aUser, aRoleName);
 
-        String representation =
-                ObjectSerializer
-                    .instance()
-                    .serialize(userInRoleRepresentation);
+		String representation = ObjectSerializer.instance().serialize(userInRoleRepresentation);
 
-        Response response =
-                Response
-                    .ok(representation)
-                    .cacheControl(this.cacheControlFor(60))
-                    .build();
+		Response response = Response.ok(representation).cacheControl(this.cacheControlFor(60)).build();
 
-        return response;
-    }
+		return response;
+	}
 
-    private Response userResponse(Request aRequest, User aUser) {
+	private Response userResponse(Request aRequest, User aUser) {
 
-        Response response = null;
+		Response response = null;
 
-        EntityTag eTag = this.userETag(aUser);
+		EntityTag eTag = this.userETag(aUser);
 
-        ResponseBuilder conditionalBuilder = aRequest.evaluatePreconditions(eTag);
+		ResponseBuilder conditionalBuilder = aRequest.evaluatePreconditions(eTag);
 
-        if (conditionalBuilder != null) {
-            response =
-                    conditionalBuilder
-                        .cacheControl(this.cacheControlFor(3600))
-                        .tag(eTag)
-                        .build();
-        } else {
-            String representation =
-                    ObjectSerializer
-                        .instance()
-                        .serialize(new UserRepresentation(aUser));
+		if (conditionalBuilder != null) {
+			response = conditionalBuilder.cacheControl(this.cacheControlFor(3600)).tag(eTag).build();
+		} else {
+			String representation = ObjectSerializer.instance().serialize(new UserRepresentation(aUser));
 
-            response =
-                    Response
-                        .ok(representation)
-                        .cacheControl(this.cacheControlFor(3600))
-                        .tag(eTag)
-                        .build();
-        }
+			response = Response.ok(representation).cacheControl(this.cacheControlFor(3600)).tag(eTag).build();
+		}
 
-        return response;
-    }
+		return response;
+	}
 }

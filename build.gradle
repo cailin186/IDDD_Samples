@@ -10,6 +10,7 @@ subprojects {
 
         // JBoss Repo
         maven { url 'https://repository.jboss.org/nexus/content/groups/public-jboss/' }
+        maven {url 'http://maven.aliyun.com/nexus/content/groups/public/'}
     }
 
     dependencies { 

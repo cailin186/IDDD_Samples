@@ -3,7 +3,7 @@
 host="0.0.0.0"
 
 mysqlUser="root"
-mysqlPassword="root"
+mysqlPassword="123456"
 mysqlContainerName="iddd-mysql"
 mysqlPort="3306"
 
@@ -16,11 +16,11 @@ containers[1]="${rabbitmqContainerName}"
 
 function start() {
     echo "Starting MySQL Server container..."
-    docker rm -f "${mysqlContainerName}"
-    docker run --name "${mysqlContainerName}" -p "${mysqlPort}":3306 -e MYSQL_ROOT_PASSWORD="${mysqlPassword}" -d mysql
+    #docker rm -f "${mysqlContainerName}"
+    #docker run --name "${mysqlContainerName}" -p "${mysqlPort}":3306 -e MYSQL_ROOT_PASSWORD="${mysqlPassword}" -d mysql
 
-    echo "Waiting for MySQL Server to be up and running..."
-    waitForContainer "${mysqlContainerName}" "mysqld: ready for connections."
+    #echo "Waiting for MySQL Server to be up and running..."
+    #waitForContainer "${mysqlContainerName}" "mysqld: ready for connections."
 
     local testSqlFiles="$(find $(pwd) -name *.sql | grep -i "test")"
     local sqlFiles="$(find $(pwd) -name *.sql | grep -vi "test")"
